@@ -178,19 +178,20 @@ export default function CalendarView() {
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 lg:py-6 gap-4">
             <div className="flex items-center gap-4">
               <MobileNav />
-              <Link href="/">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Volver al Dashboard</span>
-                  <span className="sm:hidden">Volver</span>
-                </Button>
-              </Link>
+              <div className="hidden lg:block">
+                <Link href="/">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver al Dashboard
+                  </Button>
+                </Link>
+              </div>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Calendario de Eventos</h1>
                 <p className="text-sm lg:text-base text-gray-600 hidden sm:block">Vista general de todos los eventos programados</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex justify-between items-center gap-4">
               <Link href="/events/new">
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4 mr-2" />

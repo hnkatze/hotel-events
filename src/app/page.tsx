@@ -116,37 +116,15 @@ export default function Dashboard() {
               <UserMenu />
             </div>
 
-            {/* Mobile Navigation */}
-            <div className="lg:hidden flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <Link href="/events/new">
-                  <Button className="bg-blue-600 hover:bg-blue-700 flex-1">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Evento
-                  </Button>
-                </Link>
-                <UserMenu />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Link href="/personal">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Users className="w-4 h-4 lg:mr-2" />
-                    <span className="hidden sm:inline ml-2">Personal</span>
-                  </Button>
-                </Link>
-                <Link href="/salones">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <MapPin className="w-4 h-4 lg:mr-2" />
-                    <span className="hidden sm:inline ml-2">Salones</span>
-                  </Button>
-                </Link>
-                <Link href="/calendar">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <CalendarDays className="w-4 h-4 lg:mr-2" />
-                    <span className="hidden sm:inline ml-2">Calendario</span>
-                  </Button>
-                </Link>
-              </div>
+            {/* Mobile Navigation - Solo botón principal y menú usuario */}
+            <div className="lg:hidden flex items-center gap-3">
+              <Link href="/events/new" className="flex-1">
+                <Button className="bg-blue-600 hover:bg-blue-700 w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Evento
+                </Button>
+              </Link>
+              <UserMenu />
             </div>
           </div>
         </div>

@@ -204,13 +204,14 @@ export default function PersonalPage() {
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 lg:py-6 gap-4">
             <div className="flex items-center gap-4">
               <MobileNav />
-              <Link href="/">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Volver al Dashboard</span>
-                  <span className="sm:hidden">Volver</span>
-                </Button>
-              </Link>
+              <div className="hidden lg:block">
+                <Link href="/">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver al Dashboard
+                  </Button>
+                </Link>
+              </div>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Personal</h1>
                 <p className="text-sm lg:text-base text-gray-600 hidden sm:block">Administra el personal del hotel</p>

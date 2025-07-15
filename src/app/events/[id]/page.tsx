@@ -1,0 +1,392 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import {
+  CalendarDays,
+  Users,
+  MapPin,
+  DollarSign,
+  ArrowLeft,
+  Edit,
+  Printer,
+  Mail,
+  Phone,
+  Clock,
+  CheckCircle,
+} from "lucide-react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEvents } from "@/hooks/use-events"
+import { usePersonal } from "@/hooks/use-personal"
+import UserMenu from "@/components/user-menu"
+
+export default function EventDetailsPage() {
+  const params = useParams()
+  const eventId = params.id as string
+  const { getEventById, loading } = useEvents()
+  const { getPersonalByName } = usePersonal()
+  
+  const event = getEventById(eventId)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando evento...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Evento no encontrado</h2>
+          <p className="text-gray-600 mb-6">El evento que buscas no existe o no tienes permisos para verlo.</p>
+          <Link href="/">
+            <Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al Dashboard
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "cancelled":
+        return "bg-red-100 text-red-800"
+      case "finished":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "Confirmado"
+      case "pending":
+        return "Pendiente"
+      case "cancelled":
+        return "Cancelado"
+      case "finished":
+        return "Finalizado"
+      default:
+        return status
+    }
+  }
+
+  const coordinator = event.staff?.coordinator ? getPersonalByName(event.staff.coordinator) : null
+  const kitchenSupervisor = event.staff?.kitchenSupervisor ? getPersonalByName(event.staff.kitchenSupervisor) : null
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Volver al Dashboard
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">{event.name}</h1>
+                <p className="text-gray-600">Detalles completos del evento</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href={`/events/${eventId}/edit`}>
+                <Button variant="outline">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar Evento
+                </Button>
+              </Link>
+              <Button variant="outline">
+                <Printer className="w-4 h-4 mr-2" />
+                Imprimir
+              </Button>
+              <UserMenu />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Información Principal */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Información del Evento */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle>Información del Evento</CardTitle>
+                  <Badge className={getStatusColor(event.status)}>
+                    {getStatusText(event.status)}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Fecha</p>
+                      <p className="text-gray-600">{new Date(event.date).toLocaleDateString('es-ES', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Horario</p>
+                      <p className="text-gray-600">{event.startTime} - {event.endTime}</p>
+                      {event.setupTime && (
+                        <p className="text-sm text-gray-500">Montaje desde: {event.setupTime}</p>
+                      )}
+                      {event.teardownTime && (
+                        <p className="text-sm text-gray-500">Desmontaje hasta: {event.teardownTime}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Ubicación</p>
+                      <p className="text-gray-600">{event.venue.salon}</p>
+                      <p className="text-sm text-gray-500">Configuración: {event.venue.configuration}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Asistentes</p>
+                      <p className="text-gray-600">{event.venue.attendeesMax} personas (máximo)</p>
+                      {event.venue.attendeesMin && (
+                        <p className="text-sm text-gray-500">Mínimo: {event.venue.attendeesMin}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Información del Cliente */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Información del Cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <p className="font-medium">Nombre</p>
+                    <p className="text-gray-600">{event.client.name}</p>
+                  </div>
+                  {event.client.position && (
+                    <div>
+                      <p className="font-medium">Cargo</p>
+                      <p className="text-gray-600">{event.client.position}</p>
+                    </div>
+                  )}
+                  {event.client.company && (
+                    <div>
+                      <p className="font-medium">Empresa</p>
+                      <p className="text-gray-600">{event.client.company}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Teléfono</p>
+                      <p className="text-gray-600">{event.client.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Email</p>
+                      <p className="text-gray-600">{event.client.email}</p>
+                    </div>
+                  </div>
+                </div>
+                {event.client.specialRequirements && (
+                  <div className="md:col-span-2">
+                    <p className="font-medium">Requerimientos Especiales</p>
+                    <p className="text-gray-600">{event.client.specialRequirements}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Servicios y Personal */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Servicios</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {event.services && event.services.length > 0 ? (
+                    <ul className="space-y-2">
+                      {event.services.map((service, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span>{service}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">No hay servicios especificados</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Asignado</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {coordinator && (
+                    <div>
+                      <p className="font-medium">Coordinador</p>
+                      <p className="text-gray-600">{coordinator.nombre}</p>
+                      {coordinator.telefono && (
+                        <p className="text-sm text-gray-500">{coordinator.telefono}</p>
+                      )}
+                    </div>
+                  )}
+                  {kitchenSupervisor && (
+                    <div>
+                      <p className="font-medium">Supervisor de Cocina</p>
+                      <p className="text-gray-600">{kitchenSupervisor.nombre}</p>
+                      {kitchenSupervisor.telefono && (
+                        <p className="text-sm text-gray-500">{kitchenSupervisor.telefono}</p>
+                      )}
+                    </div>
+                  )}
+                  {event.staff?.waiters && (
+                    <div>
+                      <p className="font-medium">Meseros</p>
+                      <p className="text-gray-600">{event.staff.waiters} personas</p>
+                    </div>
+                  )}
+                  {event.staff?.security && (
+                    <div>
+                      <p className="font-medium">Seguridad</p>
+                      <p className="text-gray-600">{event.staff.security} personas</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Información Financiera */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Información Financiera
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="font-medium">Costo Total</p>
+                  <p className="text-2xl font-bold text-green-600">L.{event.financial?.totalCost?.toLocaleString() || '0'}</p>
+                </div>
+                {event.financial?.deposit && (
+                  <div>
+                    <p className="font-medium">Depósito</p>
+                    <p className="text-gray-600">L.{event.financial.deposit.toLocaleString()}</p>
+                    {event.financial.depositDate && (
+                      <p className="text-sm text-gray-500">Fecha: {event.financial.depositDate}</p>
+                    )}
+                  </div>
+                )}
+                {event.financial?.balance && (
+                  <div>
+                    <p className="font-medium">Saldo Pendiente</p>
+                    <p className="text-orange-600">L.{event.financial.balance.toLocaleString()}</p>
+                  </div>
+                )}
+                {event.financial?.paymentMethod && (
+                  <div>
+                    <p className="font-medium">Método de Pago</p>
+                    <p className="text-gray-600">{event.financial.paymentMethod}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Estado Legal */}
+            {event.legal && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Estado Legal</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span>Contrato Firmado</span>
+                    <Badge variant={event.legal.contractSigned ? "default" : "destructive"}>
+                      {event.legal.contractSigned ? "Sí" : "No"}
+                    </Badge>
+                  </div>
+                  {event.legal.contractDate && (
+                    <p className="text-sm text-gray-500">Fecha: {event.legal.contractDate}</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span>Seguro</span>
+                    <Badge variant={event.legal.insurance ? "default" : "destructive"}>
+                      {event.legal.insurance ? "Sí" : "No"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Permisos</span>
+                    <Badge variant={event.legal.permits ? "default" : "destructive"}>
+                      {event.legal.permits ? "Sí" : "No"}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Notas Adicionales */}
+            {event.logistics?.specialNotes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notas Especiales</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{event.logistics.specialNotes}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

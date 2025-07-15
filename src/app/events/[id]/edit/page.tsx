@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Save, Loader2 } from "lucide-react"
+import { ArrowLeft, Save, Loader2, X } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useEvents } from "@/hooks/use-events"
 import { useSalones } from "@/hooks/use-salones"
@@ -25,39 +26,37 @@ const eventTypes = [
   "Conferencia",
   "Seminario",
   "Celebración",
-  "Lanzamiento de Producto"
+  "Lanzamiento de Producto",
+  "Otro"
 ]
 
-const configurations = [
-  "Teatro",
-  "Escuela",
-  "Cóctel",
-  "Banquete",
-  "U-Shape",
-  "Boardroom"
-]
+const configurations = ["Teatro", "Escuela", "Banquete", "Cóctel", "U", "Boardroom", "Cabaret"]
 
-const services = [
+const foodServices = [
+  "Desayuno Continental",
   "Coffee Break Mañana",
   "Coffee Break Tarde", 
-  "Almuerzo",
-  "Cena",
-  "Servicio de Bar",
-  "Decoración",
-  "Música/DJ",
-  "Fotografía",
-  "Video"
+  "Almuerzo Buffet",
+  "Almuerzo Servido",
+  "Cena Buffet",
+  "Cena Servida",
+  "Cóctel de Bienvenida",
+  "Brindis"
 ]
 
 const equipment = [
   "Proyector",
   "Pantalla",
   "Micrófono Inalámbrico",
+  "Micrófono de Solapa",
   "Sistema de Audio",
-  "Wi-Fi Reforzado",
+  "Laptop",
   "Flipchart",
-  "TV",
-  "Equipo de Video Conferencia"
+  "Pizarra",
+  "Wi-Fi Reforzado",
+  "Iluminación Especial",
+  "Tarima",
+  "Atril"
 ]
 
 export default function EditEventPage() {
@@ -67,13 +66,16 @@ export default function EditEventPage() {
   
   const { getEventById, updateEvent, loading: eventsLoading } = useEvents()
   const { salones } = useSalones()
-  const { getCoordinadores, getSupervisoresCocina } = usePersonal()
+  const { getCoordinadores, getSupervisoresCocina, getMeseros, getSeguridad } = usePersonal()
   
   const coordinadores = getCoordinadores()
   const supervisoresCocina = getSupervisoresCocina()
   
   const event = getEventById(eventId)
   const [loading, setLoading] = useState(false)
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
+  
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -84,14 +86,13 @@ export default function EditEventPage() {
     teardownTime: "",
     status: "pending" as "pending" | "confirmed" | "cancelled" | "finished",
     
-    client: {
-      name: "",
-      position: "",
-      company: "",
-      phone: "",
-      email: "",
-      specialRequirements: ""
-    },
+    // Client data (optional)
+    clientName: "",
+    clientPosition: "",
+    clientCompany: "",
+    clientPhone: "",
+    clientEmail: "",
+    specialRequirements: "",
     
     venue: {
       salon: "",
@@ -102,9 +103,6 @@ export default function EditEventPage() {
       additionalAreas: [] as string[]
     },
     
-    services: [] as string[],
-    equipment: [] as string[],
-    
     staff: {
       coordinator: "",
       waiters: 0,
@@ -112,24 +110,9 @@ export default function EditEventPage() {
       kitchenSupervisor: ""
     },
     
-    financial: {
-      totalCost: 0,
-      deposit: 0,
-      depositDate: "",
-      balance: 0,
-      paymentMethod: ""
-    },
-    
     logistics: {
       externalProviders: "",
       specialNotes: ""
-    },
-    
-    legal: {
-      contractSigned: false,
-      contractDate: "",
-      insurance: false,
-      permits: false
     }
   })
 
@@ -145,14 +128,12 @@ export default function EditEventPage() {
         teardownTime: event.teardownTime || "",
         status: event.status || "pending",
         
-        client: {
-          name: event.client?.name || "",
-          position: event.client?.position || "",
-          company: event.client?.company || "",
-          phone: event.client?.phone || "",
-          email: event.client?.email || "",
-          specialRequirements: event.client?.specialRequirements || ""
-        },
+        clientName: event.client?.name || "",
+        clientPosition: event.client?.position || "",
+        clientCompany: event.client?.company || "",
+        clientPhone: event.client?.phone || "",
+        clientEmail: event.client?.email || "",
+        specialRequirements: event.client?.specialRequirements || "",
         
         venue: {
           salon: event.venue?.salon || "",
@@ -163,9 +144,6 @@ export default function EditEventPage() {
           additionalAreas: event.venue?.additionalAreas || []
         },
         
-        services: event.services || [],
-        equipment: event.equipment || [],
-        
         staff: {
           coordinator: event.staff?.coordinator || "",
           waiters: event.staff?.waiters || 0,
@@ -173,26 +151,14 @@ export default function EditEventPage() {
           kitchenSupervisor: event.staff?.kitchenSupervisor || ""
         },
         
-        financial: {
-          totalCost: event.financial?.totalCost || 0,
-          deposit: event.financial?.deposit || 0,
-          depositDate: event.financial?.depositDate || "",
-          balance: event.financial?.balance || 0,
-          paymentMethod: event.financial?.paymentMethod || ""
-        },
-        
         logistics: {
           externalProviders: event.logistics?.externalProviders || "",
           specialNotes: event.logistics?.specialNotes || ""
-        },
-        
-        legal: {
-          contractSigned: event.legal?.contractSigned || false,
-          contractDate: event.legal?.contractDate || "",
-          insurance: event.legal?.insurance || false,
-          permits: event.legal?.permits || false
         }
       })
+      
+      setSelectedServices(event.services || [])
+      setSelectedEquipment(event.equipment || [])
     }
   }, [event])
 
@@ -224,75 +190,35 @@ export default function EditEventPage() {
     )
   }
 
-  const calculateHours = (start: string, end: string) => {
-    if (!start || !end) return 0
-    const startTime = new Date(`2000-01-01T${start}:00`)
-    const endTime = new Date(`2000-01-01T${end}:00`)
-    return (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
-  }
-
-  const calculateTotalCost = () => {
-    const selectedSalon = salones.find(s => s.nombre === formData.venue.salon)
-    if (!selectedSalon || !formData.startTime || !formData.endTime) return 0
-    
-    const hours = calculateHours(formData.startTime, formData.endTime)
-    return hours * selectedSalon.precioPorHora
-  }
-
   const handleSalonChange = (salonName: string) => {
     const salon = salones.find(s => s.nombre === salonName)
     if (salon) {
-      const newTotalCost = calculateTotalCost()
       setFormData(prev => ({
         ...prev,
         venue: {
           ...prev.venue,
           salon: salonName,
-          capacity: salon.capacidadPersonas
-        },
-        financial: {
-          ...prev.financial,
-          totalCost: newTotalCost
+          capacity: salon.capacidadPersonas,
+          attendeesMax: salon.capacidadPersonas
         }
       }))
     }
   }
 
-  const handleTimeChange = (field: "startTime" | "endTime", value: string) => {
-    setFormData(prev => {
-      const updated = {
-        ...prev,
-        [field]: value
-      }
-      
-      if (updated.startTime && updated.endTime && updated.venue.salon) {
-        const newTotalCost = calculateTotalCost()
-        updated.financial = {
-          ...updated.financial,
-          totalCost: newTotalCost
-        }
-      }
-      
-      return updated
-    })
-  }
-
   const handleServiceToggle = (service: string) => {
-    setFormData(prev => ({
-      ...prev,
-      services: prev.services.includes(service)
-        ? prev.services.filter(s => s !== service)
-        : [...prev.services, service]
-    }))
+    setSelectedServices(prev => 
+      prev.includes(service) 
+        ? prev.filter(s => s !== service)
+        : [...prev, service]
+    )
   }
 
   const handleEquipmentToggle = (item: string) => {
-    setFormData(prev => ({
-      ...prev,
-      equipment: prev.equipment.includes(item)
-        ? prev.equipment.filter(e => e !== item)
-        : [...prev.equipment, item]
-    }))
+    setSelectedEquipment(prev => 
+      prev.includes(item)
+        ? prev.filter(e => e !== item)
+        : [...prev, item]
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -300,7 +226,60 @@ export default function EditEventPage() {
     setLoading(true)
 
     try {
-      await updateEvent(eventId, formData)
+      const selectedSalon = salones.find((s) => s.nombre === formData.venue.salon)
+      
+      // Si no hay nombre de evento, usar la fecha
+      const eventName = formData.name || new Date(formData.date).toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      })
+
+      const updateData = {
+        name: eventName,
+        type: formData.type,
+        date: formData.date,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        setupTime: formData.setupTime,
+        teardownTime: formData.teardownTime,
+        status: formData.status,
+        
+        client: formData.clientName || formData.clientPhone || formData.clientEmail ? {
+          name: formData.clientName || '',
+          position: formData.clientPosition || '',
+          company: formData.clientCompany || '',
+          phone: formData.clientPhone || '',
+          email: formData.clientEmail || '',
+          specialRequirements: formData.specialRequirements || '',
+        } : undefined,
+        
+        venue: {
+          salon: formData.venue.salon,
+          capacity: selectedSalon?.capacidadPersonas || formData.venue.capacity,
+          configuration: formData.venue.configuration,
+          attendeesMin: formData.venue.attendeesMin,
+          attendeesMax: formData.venue.attendeesMax,
+          additionalAreas: formData.venue.additionalAreas
+        },
+        
+        services: selectedServices,
+        equipment: selectedEquipment,
+        
+        staff: {
+          coordinator: formData.staff.coordinator,
+          waiters: formData.staff.waiters,
+          security: formData.staff.security,
+          kitchenSupervisor: formData.staff.kitchenSupervisor
+        },
+        
+        logistics: {
+          externalProviders: formData.logistics.externalProviders,
+          specialNotes: formData.logistics.specialNotes
+        }
+      }
+
+      await updateEvent(eventId, updateData)
       toast.success("Evento actualizado exitosamente")
       router.push(`/events/${eventId}`)
     } catch (error) {
@@ -335,445 +314,467 @@ export default function EditEventPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Información Básica */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información Básica del Evento</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="name">Nombre del Evento *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="type">Tipo de Evento *</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {eventTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="date">Fecha *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="status">Estado</Label>
-                <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="confirmed">Confirmado</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
-                    <SelectItem value="finished">Finalizado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="startTime">Hora de Inicio *</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => handleTimeChange("startTime", e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="endTime">Hora de Fin *</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => handleTimeChange("endTime", e.target.value)}
-                  required
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Información del Cliente */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información del Cliente</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="clientName">Nombre del Cliente *</Label>
-                <Input
-                  id="clientName"
-                  value={formData.client.name}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    client: { ...prev.client, name: e.target.value }
-                  }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="clientPhone">Teléfono *</Label>
-                <Input
-                  id="clientPhone"
-                  value={formData.client.phone}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    client: { ...prev.client, phone: e.target.value }
-                  }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="clientEmail">Email *</Label>
-                <Input
-                  id="clientEmail"
-                  type="email"
-                  value={formData.client.email}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    client: { ...prev.client, email: e.target.value }
-                  }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="clientPosition">Cargo</Label>
-                <Input
-                  id="clientPosition"
-                  value={formData.client.position}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    client: { ...prev.client, position: e.target.value }
-                  }))}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="clientCompany">Empresa</Label>
-                <Input
-                  id="clientCompany"
-                  value={formData.client.company}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    client: { ...prev.client, company: e.target.value }
-                  }))}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="specialRequirements">Requerimientos Especiales</Label>
-                <Textarea
-                  id="specialRequirements"
-                  value={formData.client.specialRequirements}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    client: { ...prev.client, specialRequirements: e.target.value }
-                  }))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Información del Venue */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información del Venue</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="salon">Salón *</Label>
-                <Select value={formData.venue.salon} onValueChange={handleSalonChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un salón" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {salones.map((salon) => (
-                      <SelectItem key={salon.nombre} value={salon.nombre}>
-                        {salon.nombre} - L.{salon.precioPorHora}/hora
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="configuration">Configuración *</Label>
-                <Select value={formData.venue.configuration} onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  venue: { ...prev.venue, configuration: value }
-                }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona configuración" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {configurations.map((config) => (
-                      <SelectItem key={config} value={config}>{config}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="attendeesMax">Número de Asistentes *</Label>
-                <Input
-                  id="attendeesMax"
-                  type="number"
-                  value={formData.venue.attendeesMax}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    venue: { ...prev.venue, attendeesMax: parseInt(e.target.value) || 0 }
-                  }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Costo Total Calculado</Label>
-                <div className="text-2xl font-bold text-green-600">
-                  L.{formData.financial.totalCost.toLocaleString()}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Main Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Información Básica */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Información Básica del Evento</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="name">Nombre del Evento</Label>
+                  <Input
+                    id="name"
+                    placeholder="ej: Conferencia Tech 2024 (opcional - se usará la fecha si no se especifica)"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  />
                 </div>
-                {formData.venue.salon && formData.startTime && formData.endTime && (
-                  <div className="text-sm text-gray-500">
-                    {calculateHours(formData.startTime, formData.endTime)} horas × L.{salones.find(s => s.nombre === formData.venue.salon)?.precioPorHora.toLocaleString()}/hora
+                
+                <div>
+                  <Label htmlFor="type">Tipo de Evento *</Label>
+                  <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eventTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="date">Fecha *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="status">Estado</Label>
+                  <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendiente</SelectItem>
+                      <SelectItem value="confirmed">Confirmado</SelectItem>
+                      <SelectItem value="cancelled">Cancelado</SelectItem>
+                      <SelectItem value="finished">Finalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="startTime">Hora de Inicio *</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={formData.startTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="endTime">Hora de Fin *</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="setupTime">Hora de Montaje</Label>
+                  <Input
+                    id="setupTime"
+                    type="time"
+                    value={formData.setupTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, setupTime: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="teardownTime">Hora de Desmontaje</Label>
+                  <Input
+                    id="teardownTime"
+                    type="time"
+                    value={formData.teardownTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, teardownTime: e.target.value }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Información del Cliente */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Información del Cliente (Opcional)</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="clientName">Nombre del Cliente</Label>
+                  <Input
+                    id="clientName"
+                    placeholder="ej: María Gómez (opcional)"
+                    value={formData.clientName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="clientPhone">Teléfono</Label>
+                  <Input
+                    id="clientPhone"
+                    placeholder="+1 234 567 8900 (opcional)"
+                    value={formData.clientPhone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="clientEmail">Email</Label>
+                  <Input
+                    id="clientEmail"
+                    type="email"
+                    placeholder="maria@techcorp.com (opcional)"
+                    value={formData.clientEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="clientPosition">Cargo</Label>
+                  <Input
+                    id="clientPosition"
+                    placeholder="ej: Directora de Marketing"
+                    value={formData.clientPosition}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientPosition: e.target.value }))}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="clientCompany">Empresa</Label>
+                  <Input
+                    id="clientCompany"
+                    placeholder="ej: TechCorp S.A."
+                    value={formData.clientCompany}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientCompany: e.target.value }))}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="specialRequirements">Requerimientos Especiales</Label>
+                  <Textarea
+                    id="specialRequirements"
+                    placeholder="Accesibilidad, restricciones religiosas, etc."
+                    value={formData.specialRequirements}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specialRequirements: e.target.value }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Información del Venue */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Información del Venue</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="salon">Salón *</Label>
+                  <Select value={formData.venue.salon} onValueChange={handleSalonChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un salón" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salones.map((salon) => (
+                        <SelectItem key={salon.nombre} value={salon.nombre}>
+                          {salon.nombre} - L.{salon.precioPorHora}/hora
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="configuration">Configuración *</Label>
+                  <Select value={formData.venue.configuration} onValueChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    venue: { ...prev.venue, configuration: value }
+                  }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona configuración" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {configurations.map((config) => (
+                        <SelectItem key={config} value={config}>{config}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="attendeesMin">Asistentes Mínimo</Label>
+                  <Input
+                    id="attendeesMin"
+                    type="number"
+                    value={formData.venue.attendeesMin}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      venue: { ...prev.venue, attendeesMin: parseInt(e.target.value) || 0 }
+                    }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="attendeesMax">Asistentes Máximo *</Label>
+                  <Input
+                    id="attendeesMax"
+                    type="number"
+                    value={formData.venue.attendeesMax}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      venue: { ...prev.venue, attendeesMax: parseInt(e.target.value) || 0 }
+                    }))}
+                    readOnly={!!formData.venue.salon}
+                    className={formData.venue.salon ? "bg-gray-100" : ""}
+                    required
+                  />
+                  {formData.venue.salon && (
+                    <p className="text-xs text-gray-500 mt-1">Capacidad máxima del salón seleccionado</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Servicios */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Servicios de Alimentación (F&B)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                  {foodServices.map((service) => (
+                    <div key={service} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={service}
+                        checked={selectedServices.includes(service)}
+                        onCheckedChange={() => handleServiceToggle(service)}
+                      />
+                      <Label htmlFor={service} className="text-sm font-normal">
+                        {service}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {selectedServices.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <Label>Servicios Seleccionados:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedServices.map((service) => (
+                        <Badge key={service} variant="secondary" className="flex items-center gap-1">
+                          {service}
+                          <X className="w-3 h-3 cursor-pointer" onClick={() => handleServiceToggle(service)} />
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Personal */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Asignado</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="coordinator">Coordinador</Label>
-                <Select value={formData.staff.coordinator} onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  staff: { ...prev.staff, coordinator: value }
-                }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona coordinador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
-                    {coordinadores.map((person) => (
-                      <SelectItem key={person.id} value={person.nombre}>
-                        {person.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="kitchenSupervisor">Supervisor de Cocina</Label>
-                <Select value={formData.staff.kitchenSupervisor} onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  staff: { ...prev.staff, kitchenSupervisor: value }
-                }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona supervisor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
-                    {supervisoresCocina.map((person) => (
-                      <SelectItem key={person.id} value={person.nombre}>
-                        {person.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="waiters">Número de Meseros</Label>
-                <Input
-                  id="waiters"
-                  type="number"
-                  min="0"
-                  value={formData.staff.waiters}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    staff: { ...prev.staff, waiters: parseInt(e.target.value) || 0 }
-                  }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="security">Personal de Seguridad</Label>
-                <Input
-                  id="security"
-                  type="number"
-                  min="0"
-                  value={formData.staff.security}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    staff: { ...prev.staff, security: parseInt(e.target.value) || 0 }
-                  }))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Servicios */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Servicios</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {services.map((service) => (
-                  <div key={service} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={service}
-                      checked={formData.services.includes(service)}
-                      onCheckedChange={() => handleServiceToggle(service)}
-                    />
-                    <Label htmlFor={service} className="text-sm font-normal">
-                      {service}
-                    </Label>
+            {/* Equipos */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Equipamiento y Recursos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                  {equipment.map((item) => (
+                    <div key={item} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={item}
+                        checked={selectedEquipment.includes(item)}
+                        onCheckedChange={() => handleEquipmentToggle(item)}
+                      />
+                      <Label htmlFor={item} className="text-sm font-normal">
+                        {item}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {selectedEquipment.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <Label>Equipos Seleccionados:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEquipment.map((item) => (
+                        <Badge key={item} variant="secondary" className="flex items-center gap-1">
+                          {item}
+                          <X className="w-3 h-3 cursor-pointer" onClick={() => handleEquipmentToggle(item)} />
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Equipos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Equipos y Tecnología</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {equipment.map((item) => (
-                  <div key={item} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={item}
-                      checked={formData.equipment.includes(item)}
-                      onCheckedChange={() => handleEquipmentToggle(item)}
-                    />
-                    <Label htmlFor={item} className="text-sm font-normal">
-                      {item}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Información Legal */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información Legal</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="contractSigned"
-                  checked={formData.legal.contractSigned}
-                  onCheckedChange={(checked) => setFormData(prev => ({
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Personal */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Asignado</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="coordinator">Coordinador</Label>
+                  <Select value={formData.staff.coordinator} onValueChange={(value) => setFormData(prev => ({
                     ...prev,
-                    legal: { ...prev.legal, contractSigned: checked as boolean }
-                  }))}
-                />
-                <Label htmlFor="contractSigned">Contrato Firmado</Label>
-              </div>
+                    staff: { ...prev.staff, coordinator: value }
+                  }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona coordinador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin asignar</SelectItem>
+                      {coordinadores.map((person) => (
+                        <SelectItem key={person.id} value={person.nombre}>
+                          {person.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="insurance"
-                  checked={formData.legal.insurance}
-                  onCheckedChange={(checked) => setFormData(prev => ({
+                <div>
+                  <Label htmlFor="kitchenSupervisor">Supervisor de Cocina</Label>
+                  <Select value={formData.staff.kitchenSupervisor} onValueChange={(value) => setFormData(prev => ({
                     ...prev,
-                    legal: { ...prev.legal, insurance: checked as boolean }
-                  }))}
-                />
-                <Label htmlFor="insurance">Seguro Contratado</Label>
-              </div>
+                    staff: { ...prev.staff, kitchenSupervisor: value }
+                  }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona supervisor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin asignar</SelectItem>
+                      {supervisoresCocina.map((person) => (
+                        <SelectItem key={person.id} value={person.nombre}>
+                          {person.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="permits"
-                  checked={formData.legal.permits}
-                  onCheckedChange={(checked) => setFormData(prev => ({
-                    ...prev,
-                    legal: { ...prev.legal, permits: checked as boolean }
-                  }))}
-                />
-                <Label htmlFor="permits">Permisos Obtenidos</Label>
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <Label htmlFor="waiters">Cantidad de Meseros</Label>
+                  <Input
+                    id="waiters"
+                    type="number"
+                    min="0"
+                    value={formData.staff.waiters}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      staff: { ...prev.staff, waiters: parseInt(e.target.value) || 0 }
+                    }))}
+                  />
+                  {getMeseros().length > 0 && (
+                    <div className="text-xs text-gray-600 mt-1">
+                      Meseros disponibles: {getMeseros().map(m => m.nombre).join(", ")}
+                    </div>
+                  )}
+                </div>
 
-          {/* Notas */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Notas Adicionales</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <Label htmlFor="specialNotes">Notas Especiales</Label>
-                <Textarea
-                  id="specialNotes"
-                  value={formData.logistics.specialNotes}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    logistics: { ...prev.logistics, specialNotes: e.target.value }
-                  }))}
-                  placeholder="Cualquier información adicional relevante para el evento..."
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <Label htmlFor="security">Personal de Seguridad</Label>
+                  <Input
+                    id="security"
+                    type="number"
+                    min="0"
+                    value={formData.staff.security}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      staff: { ...prev.staff, security: parseInt(e.target.value) || 0 }
+                    }))}
+                  />
+                  {getSeguridad().length > 0 && (
+                    <div className="text-xs text-gray-600 mt-1">
+                      Personal de seguridad disponible: {getSeguridad().map(s => s.nombre).join(", ")}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Botones de Acción */}
-          <div className="flex justify-end gap-4">
-            <Link href={`/events/${eventId}`}>
-              <Button type="button" variant="outline">
-                Cancelar
+            {/* Notas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Logística Operativa</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="externalProviders">Proveedores Externos</Label>
+                  <Textarea
+                    id="externalProviders"
+                    placeholder="DJ, florista, etc."
+                    value={formData.logistics.externalProviders}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      logistics: { ...prev.logistics, externalProviders: e.target.value }
+                    }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="specialNotes">Notas Especiales</Label>
+                  <Textarea
+                    id="specialNotes"
+                    value={formData.logistics.specialNotes}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      logistics: { ...prev.logistics, specialNotes: e.target.value }
+                    }))}
+                    placeholder="Instrucciones importantes..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Botones de Acción */}
+            <div className="flex gap-4">
+              <Link href={`/events/${eventId}`} className="flex-1">
+                <Button type="button" variant="outline" className="w-full">
+                  Cancelar
+                </Button>
+              </Link>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar Cambios
+                  </>
+                )}
               </Button>
-            </Link>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Guardar Cambios
-                </>
-              )}
-            </Button>
+            </div>
           </div>
         </form>
       </div>

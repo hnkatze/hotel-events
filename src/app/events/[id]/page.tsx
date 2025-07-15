@@ -7,7 +7,6 @@ import {
   CalendarDays,
   Users,
   MapPin,
-  DollarSign,
   ArrowLeft,
   Edit,
   Printer,
@@ -192,53 +191,61 @@ export default function EventDetailsPage() {
             </Card>
 
             {/* Información del Cliente */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Información del Cliente</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <p className="font-medium">Nombre</p>
-                    <p className="text-gray-600">{event.client.name}</p>
+            {event.client && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información del Cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    {event.client.name && (
+                      <div>
+                        <p className="font-medium">Nombre</p>
+                        <p className="text-gray-600">{event.client.name}</p>
+                      </div>
+                    )}
+                    {event.client.position && (
+                      <div>
+                        <p className="font-medium">Cargo</p>
+                        <p className="text-gray-600">{event.client.position}</p>
+                      </div>
+                    )}
+                    {event.client.company && (
+                      <div>
+                        <p className="font-medium">Empresa</p>
+                        <p className="text-gray-600">{event.client.company}</p>
+                      </div>
+                    )}
                   </div>
-                  {event.client.position && (
-                    <div>
-                      <p className="font-medium">Cargo</p>
-                      <p className="text-gray-600">{event.client.position}</p>
+                  <div className="space-y-4">
+                    {event.client.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="font-medium">Teléfono</p>
+                          <p className="text-gray-600">{event.client.phone}</p>
+                        </div>
+                      </div>
+                    )}
+                    {event.client.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="font-medium">Email</p>
+                          <p className="text-gray-600">{event.client.email}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {event.client.specialRequirements && (
+                    <div className="md:col-span-2">
+                      <p className="font-medium">Requerimientos Especiales</p>
+                      <p className="text-gray-600">{event.client.specialRequirements}</p>
                     </div>
                   )}
-                  {event.client.company && (
-                    <div>
-                      <p className="font-medium">Empresa</p>
-                      <p className="text-gray-600">{event.client.company}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="font-medium">Teléfono</p>
-                      <p className="text-gray-600">{event.client.phone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="font-medium">Email</p>
-                      <p className="text-gray-600">{event.client.email}</p>
-                    </div>
-                  </div>
-                </div>
-                {event.client.specialRequirements && (
-                  <div className="md:col-span-2">
-                    <p className="font-medium">Requerimientos Especiales</p>
-                    <p className="text-gray-600">{event.client.specialRequirements}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Servicios y Personal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -304,71 +311,33 @@ export default function EventDetailsPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Información Financiera */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Información Financiera
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="font-medium">Costo Total</p>
-                  <p className="text-2xl font-bold text-green-600">L.{event.financial?.totalCost?.toLocaleString() || '0'}</p>
-                </div>
-                {event.financial?.deposit && (
-                  <div>
-                    <p className="font-medium">Depósito</p>
-                    <p className="text-gray-600">L.{event.financial.deposit.toLocaleString()}</p>
-                    {event.financial.depositDate && (
-                      <p className="text-sm text-gray-500">Fecha: {event.financial.depositDate}</p>
-                    )}
-                  </div>
-                )}
-                {event.financial?.balance && (
-                  <div>
-                    <p className="font-medium">Saldo Pendiente</p>
-                    <p className="text-orange-600">L.{event.financial.balance.toLocaleString()}</p>
-                  </div>
-                )}
-                {event.financial?.paymentMethod && (
-                  <div>
-                    <p className="font-medium">Método de Pago</p>
-                    <p className="text-gray-600">{event.financial.paymentMethod}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Estado Legal */}
-            {event.legal && (
+            {/* Equipamiento */}
+            {event.equipment && event.equipment.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Estado Legal</CardTitle>
+                  <CardTitle>Equipamiento</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span>Contrato Firmado</span>
-                    <Badge variant={event.legal.contractSigned ? "default" : "destructive"}>
-                      {event.legal.contractSigned ? "Sí" : "No"}
-                    </Badge>
-                  </div>
-                  {event.legal.contractDate && (
-                    <p className="text-sm text-gray-500">Fecha: {event.legal.contractDate}</p>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span>Seguro</span>
-                    <Badge variant={event.legal.insurance ? "default" : "destructive"}>
-                      {event.legal.insurance ? "Sí" : "No"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Permisos</span>
-                    <Badge variant={event.legal.permits ? "default" : "destructive"}>
-                      {event.legal.permits ? "Sí" : "No"}
-                    </Badge>
-                  </div>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {event.equipment.map((item, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Proveedores Externos */}
+            {event.logistics?.externalProviders && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Proveedores Externos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{event.logistics.externalProviders}</p>
                 </CardContent>
               </Card>
             )}

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Users, MapPin, DollarSign, ArrowLeft, Save, X, Loader2 } from "lucide-react"
+import { CalendarDays, Users, MapPin, ArrowLeft, Save, X, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useEvents } from "@/hooks/use-events"
 import { useSalones } from "@/hooks/use-salones"
@@ -59,12 +59,6 @@ export default function NewEvent() {
     attendeesMax: "",
     additionalAreas: [] as string[],
 
-    // Financial data
-    totalCost: "",
-    deposit: "",
-    depositDate: "",
-    paymentMethod: "",
-
     // Staff data
     coordinator: "",
     waiters: "",
@@ -74,12 +68,6 @@ export default function NewEvent() {
     // Logistics
     externalProviders: "",
     specialNotes: "",
-
-    // Legal
-    contractSigned: false,
-    contractDate: "",
-    insurance: false,
-    permits: false,
   })
 
   const eventTypes = [
@@ -134,54 +122,17 @@ export default function NewEvent() {
   const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     
-    // Calcular costos automáticamente cuando se selecciona un salón
+    // Auto-fill max attendees when salon is selected
     if (field === "salon" && typeof value === "string") {
       const selectedSalon = salones.find(s => s.nombre === value)
       if (selectedSalon) {
-        // Calcular horas entre startTime y endTime
-        const startTime = formData.startTime || "09:00"
-        const endTime = formData.endTime || "17:00"
-        const hours = calculateHours(startTime, endTime)
-        const totalCost = selectedSalon.precioPorHora * hours
-        
         setFormData(prev => ({ 
           ...prev, 
-          [field]: value,
-          totalCost: totalCost.toString()
+          salon: value,
+          attendeesMax: selectedSalon.capacidadPersonas.toString()
         }))
       }
     }
-    
-    // Recalcular cuando cambian las horas
-    if ((field === "startTime" || field === "endTime") && formData.salon) {
-      const selectedSalon = salones.find(s => s.nombre === formData.salon)
-      if (selectedSalon) {
-        const startTime = field === "startTime" ? value as string : formData.startTime
-        const endTime = field === "endTime" ? value as string : formData.endTime
-        
-        if (startTime && endTime) {
-          const hours = calculateHours(startTime, endTime)
-          const totalCost = selectedSalon.precioPorHora * hours
-          
-          setFormData(prev => ({ 
-            ...prev, 
-            [field]: value,
-            totalCost: totalCost.toString()
-          }))
-        }
-      }
-    }
-  }
-
-  const calculateHours = (startTime: string, endTime: string): number => {
-    const [startHour, startMinute] = startTime.split(":").map(Number)
-    const [endHour, endMinute] = endTime.split(":").map(Number)
-    
-    const startTotalMinutes = startHour * 60 + startMinute
-    const endTotalMinutes = endHour * 60 + endMinute
-    
-    const diffMinutes = endTotalMinutes - startTotalMinutes
-    return Math.max(1, Math.round(diffMinutes / 60)) // Mínimo 1 hora
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,7 +144,7 @@ export default function NewEvent() {
     }
 
     // Basic validation
-    if (!formData.name || !formData.type || !formData.date || !formData.startTime || !formData.endTime) {
+    if (!formData.type || !formData.date || !formData.startTime || !formData.endTime) {
       toast.error("Por favor completa los campos obligatorios")
       return
     }
@@ -203,18 +154,20 @@ export default function NewEvent() {
       return
     }
 
-    if (!formData.clientName || !formData.clientPhone || !formData.clientEmail) {
-      toast.error("Por favor completa la información del cliente")
-      return
-    }
-
     setLoading(true)
 
     try {
       const selectedSalon = salones.find((s) => s.nombre === formData.salon)
+      
+      // Si no hay nombre de evento, usar la fecha
+      const eventName = formData.name || new Date(formData.date).toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      })
 
       const eventData = {
-        name: formData.name,
+        name: eventName,
         type: formData.type,
         date: formData.date,
         startTime: formData.startTime,
@@ -222,14 +175,14 @@ export default function NewEvent() {
         setupTime: formData.setupTime,
         status: formData.status,
 
-        client: {
-          name: formData.clientName,
-          position: formData.clientPosition,
-          company: formData.clientCompany,
-          phone: formData.clientPhone,
-          email: formData.clientEmail,
-          specialRequirements: formData.specialRequirements,
-        },
+        client: formData.clientName || formData.clientPhone || formData.clientEmail ? {
+          name: formData.clientName || '',
+          position: formData.clientPosition || '',
+          company: formData.clientCompany || '',
+          phone: formData.clientPhone || '',
+          email: formData.clientEmail || '',
+          specialRequirements: formData.specialRequirements || '',
+        } : undefined,
 
         venue: {
           salon: formData.salon,
@@ -250,24 +203,9 @@ export default function NewEvent() {
           kitchenSupervisor: formData.kitchenSupervisor,
         },
 
-        financial: {
-          totalCost: Number.parseFloat(formData.totalCost) || 0,
-          deposit: Number.parseFloat(formData.deposit) || 0,
-          depositDate: formData.depositDate,
-          balance: (Number.parseFloat(formData.totalCost) || 0) - (Number.parseFloat(formData.deposit) || 0),
-          paymentMethod: formData.paymentMethod,
-        },
-
         logistics: {
           externalProviders: formData.externalProviders,
           specialNotes: formData.specialNotes,
-        },
-
-        legal: {
-          contractSigned: formData.contractSigned,
-          contractDate: formData.contractDate,
-          insurance: formData.insurance,
-          permits: formData.permits,
         },
       }
 
@@ -340,13 +278,12 @@ export default function NewEvent() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="eventName">Nombre del Evento *</Label>
+                      <Label htmlFor="eventName">Nombre del Evento</Label>
                       <Input
                         id="eventName"
-                        placeholder="ej: Conferencia Tech 2024"
+                        placeholder="ej: Conferencia Tech 2024 (opcional - se usará la fecha si no se especifica)"
                         value={formData.name}
                         onChange={(e) => handleInputChange("name", e.target.value)}
-                        required
                       />
                     </div>
                     <div className="space-y-2">
@@ -435,19 +372,18 @@ export default function NewEvent() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="w-5 h-5" />
-                    Cliente/Contratante
+                    Cliente/Contratante (Opcional)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="clientName">Nombre Completo *</Label>
+                      <Label htmlFor="clientName">Nombre Completo</Label>
                       <Input
                         id="clientName"
-                        placeholder="ej: María Gómez"
+                        placeholder="ej: María Gómez (opcional)"
                         value={formData.clientName}
                         onChange={(e) => handleInputChange("clientName", e.target.value)}
-                        required
                       />
                     </div>
                     <div className="space-y-2">
@@ -473,24 +409,22 @@ export default function NewEvent() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono *</Label>
+                      <Label htmlFor="phone">Teléfono</Label>
                       <Input
                         id="phone"
-                        placeholder="+1 234 567 8900"
+                        placeholder="+1 234 567 8900 (opcional)"
                         value={formData.clientPhone}
                         onChange={(e) => handleInputChange("clientPhone", e.target.value)}
-                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="maria@techcorp.com"
+                        placeholder="maria@techcorp.com (opcional)"
                         value={formData.clientEmail}
                         onChange={(e) => handleInputChange("clientEmail", e.target.value)}
-                        required
                       />
                     </div>
                   </div>
@@ -571,8 +505,13 @@ export default function NewEvent() {
                         placeholder="120"
                         value={formData.attendeesMax}
                         onChange={(e) => handleInputChange("attendeesMax", e.target.value)}
+                        readOnly={!!formData.salon}
+                        className={formData.salon ? "bg-gray-100" : ""}
                         required
                       />
+                      {formData.salon && (
+                        <p className="text-xs text-gray-500">Capacidad máxima del salón seleccionado</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -661,89 +600,6 @@ export default function NewEvent() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Resumen Financiero */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5" />
-                    Aspectos Financieros
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="totalCost">Costo Total</Label>
-                    <Input
-                      id="totalCost"
-                      type="number"
-                      placeholder="15000"
-                      value={formData.totalCost}
-                      onChange={(e) => handleInputChange("totalCost", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="deposit">Depósito Pagado</Label>
-                    <Input
-                      id="deposit"
-                      type="number"
-                      placeholder="5000"
-                      value={formData.deposit}
-                      onChange={(e) => handleInputChange("deposit", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="depositDate">Fecha de Depósito</Label>
-                    <Input
-                      id="depositDate"
-                      type="date"
-                      value={formData.depositDate}
-                      onChange={(e) => handleInputChange("depositDate", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Método de Pago</Label>
-                    <Select
-                      value={formData.paymentMethod}
-                      onValueChange={(value) => handleInputChange("paymentMethod", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Efectivo</SelectItem>
-                        <SelectItem value="card">Tarjeta</SelectItem>
-                        <SelectItem value="transfer">Transferencia</SelectItem>
-                        <SelectItem value="check">Cheque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal:</span>
-                      <span>${formData.totalCost || "0"}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Depósito:</span>
-                      <span className="text-green-600">${formData.deposit || "0"}</span>
-                    </div>
-                    <div className="flex justify-between font-semibold text-sm text-red-600">
-                      <span>Saldo Pendiente:</span>
-                      <span>
-                        L.
-                        {(
-                          (Number.parseFloat(formData.totalCost) || 0) - (Number.parseFloat(formData.deposit) || 0)
-                        ).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Personal Asignado */}
               <Card>
                 <CardHeader>
@@ -857,51 +713,6 @@ export default function NewEvent() {
                       placeholder="Instrucciones importantes..."
                       value={formData.specialNotes}
                       onChange={(e) => handleInputChange("specialNotes", e.target.value)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Aspectos Legales */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Seguridad y Legales</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="contract"
-                      checked={formData.contractSigned}
-                      onCheckedChange={(checked) => handleInputChange("contractSigned", checked)}
-                    />
-                    <Label htmlFor="contract">Contrato Firmado</Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="insurance"
-                      checked={formData.insurance}
-                      onCheckedChange={(checked) => handleInputChange("insurance", checked)}
-                    />
-                    <Label htmlFor="insurance">Seguro del Evento</Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="permits"
-                      checked={formData.permits}
-                      onCheckedChange={(checked) => handleInputChange("permits", checked)}
-                    />
-                    <Label htmlFor="permits">Permisos Municipales</Label>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contractDate">Fecha de Contrato</Label>
-                    <Input
-                      id="contractDate"
-                      type="date"
-                      value={formData.contractDate}
-                      onChange={(e) => handleInputChange("contractDate", e.target.value)}
                     />
                   </div>
                 </CardContent>

@@ -28,13 +28,13 @@ export interface Event {
   teardownTime?: string
   status: "pending" | "confirmed" | "cancelled" | "finished"
 
-  // Cliente
-  client: {
-    name: string
+  // Cliente (opcional)
+  client?: {
+    name?: string
     position?: string
     company?: string
-    phone: string
-    email: string
+    phone?: string
+    email?: string
     specialRequirements?: string
   }
 
@@ -60,27 +60,10 @@ export interface Event {
     kitchenSupervisor?: string
   }
 
-  // Financial
-  financial: {
-    totalCost: number
-    deposit?: number
-    depositDate?: string
-    balance?: number
-    paymentMethod?: string
-  }
-
   // Logistics
   logistics: {
     externalProviders?: string
     specialNotes?: string
-  }
-
-  // Legal
-  legal: {
-    contractSigned: boolean
-    contractDate?: string
-    insurance: boolean
-    permits: boolean
   }
 
   createdAt: Timestamp

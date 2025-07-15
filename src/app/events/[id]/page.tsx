@@ -20,6 +20,7 @@ import { useParams } from "next/navigation"
 import { useEvents } from "@/hooks/use-events"
 import { usePersonal } from "@/hooks/use-personal"
 import UserMenu from "@/components/user-menu"
+import MobileNav from "@/components/mobile-nav"
 
 export default function EventDetailsPage() {
   const params = useParams()
@@ -95,20 +96,25 @@ export default function EventDetailsPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 lg:py-6 gap-4">
             <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver al Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">{event.name}</h1>
-                <p className="text-gray-600">Detalles completos del evento</p>
+              <MobileNav />
+              <div className="hidden lg:block">
+                <Link href="/">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver al Dashboard
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{event.name}</h1>
+                <p className="text-sm lg:text-base text-gray-600">Detalles completos del evento</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            
+            {/* Desktop Actions */}
+            <div className="hidden lg:flex items-center gap-4">
               <Link href={`/events/${eventId}/edit`}>
                 <Button variant="outline">
                   <Edit className="w-4 h-4 mr-2" />
@@ -118,6 +124,20 @@ export default function EventDetailsPage() {
               <Button variant="outline">
                 <Printer className="w-4 h-4 mr-2" />
                 Imprimir
+              </Button>
+              <UserMenu />
+            </div>
+            
+            {/* Mobile Actions */}
+            <div className="lg:hidden flex items-center justify-between gap-2">
+              <Link href={`/events/${eventId}/edit`} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm">
+                <Printer className="w-4 h-4" />
               </Button>
               <UserMenu />
             </div>

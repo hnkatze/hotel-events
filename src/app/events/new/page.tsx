@@ -166,7 +166,7 @@ export default function NewEvent() {
         year: 'numeric' 
       })
 
-      const eventData = {
+      const eventData: any = {
         name: eventName,
         type: formData.type,
         date: formData.date,
@@ -174,15 +174,6 @@ export default function NewEvent() {
         endTime: formData.endTime,
         setupTime: formData.setupTime,
         status: formData.status,
-
-        client: formData.clientName || formData.clientPhone || formData.clientEmail ? {
-          name: formData.clientName || '',
-          position: formData.clientPosition || '',
-          company: formData.clientCompany || '',
-          phone: formData.clientPhone || '',
-          email: formData.clientEmail || '',
-          specialRequirements: formData.specialRequirements || '',
-        } : undefined,
 
         venue: {
           salon: formData.salon,
@@ -207,6 +198,18 @@ export default function NewEvent() {
           externalProviders: formData.externalProviders,
           specialNotes: formData.specialNotes,
         },
+      }
+
+      // Only add client if there's at least one field with data
+      if (formData.clientName || formData.clientPhone || formData.clientEmail) {
+        eventData.client = {
+          name: formData.clientName || '',
+          position: formData.clientPosition || '',
+          company: formData.clientCompany || '',
+          phone: formData.clientPhone || '',
+          email: formData.clientEmail || '',
+          specialRequirements: formData.specialRequirements || '',
+        }
       }
 
       const eventId = await addEvent(eventData)

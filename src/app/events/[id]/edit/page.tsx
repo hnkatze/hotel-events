@@ -16,6 +16,7 @@ import { useEvents } from "@/hooks/use-events"
 import { useSalones } from "@/hooks/use-salones"
 import { usePersonal } from "@/hooks/use-personal"
 import UserMenu from "@/components/user-menu"
+import MobileNav from "@/components/mobile-nav"
 import { toast } from "sonner"
 
 const eventTypes = [
@@ -235,7 +236,7 @@ export default function EditEventPage() {
         year: 'numeric' 
       })
 
-      const updateData = {
+      const updateData: any = {
         name: eventName,
         type: formData.type,
         date: formData.date,
@@ -244,15 +245,6 @@ export default function EditEventPage() {
         setupTime: formData.setupTime,
         teardownTime: formData.teardownTime,
         status: formData.status,
-        
-        client: formData.clientName || formData.clientPhone || formData.clientEmail ? {
-          name: formData.clientName || '',
-          position: formData.clientPosition || '',
-          company: formData.clientCompany || '',
-          phone: formData.clientPhone || '',
-          email: formData.clientEmail || '',
-          specialRequirements: formData.specialRequirements || '',
-        } : undefined,
         
         venue: {
           salon: formData.venue.salon,
@@ -278,6 +270,18 @@ export default function EditEventPage() {
           specialNotes: formData.logistics.specialNotes
         }
       }
+      
+      // Only add client if there's at least one field with data
+      if (formData.clientName || formData.clientPhone || formData.clientEmail) {
+        updateData.client = {
+          name: formData.clientName || '',
+          position: formData.clientPosition || '',
+          company: formData.clientCompany || '',
+          phone: formData.clientPhone || '',
+          email: formData.clientEmail || '',
+          specialRequirements: formData.specialRequirements || '',
+        }
+      }
 
       await updateEvent(eventId, updateData)
       toast.success("Evento actualizado exitosamente")
@@ -295,17 +299,20 @@ export default function EditEventPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 lg:py-6 gap-4">
             <div className="flex items-center gap-4">
-              <Link href={`/events/${eventId}`}>
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver a Detalles
-                </Button>
-              </Link>
+              <MobileNav />
+              <div className="hidden lg:block">
+                <Link href={`/events/${eventId}`}>
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver a Detalles
+                  </Button>
+                </Link>
+              </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Editar Evento</h1>
-                <p className="text-gray-600">Modifica la información del evento</p>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Editar Evento</h1>
+                <p className="text-sm lg:text-base text-gray-600">Modifica la información del evento</p>
               </div>
             </div>
             <UserMenu />
@@ -642,15 +649,15 @@ export default function EditEventPage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="coordinator">Coordinador</Label>
-                  <Select value={formData.staff.coordinator} onValueChange={(value) => setFormData(prev => ({
+                  <Select value={formData.staff.coordinator || "none"} onValueChange={(value) => setFormData(prev => ({
                     ...prev,
-                    staff: { ...prev.staff, coordinator: value }
+                    staff: { ...prev.staff, coordinator: value === "none" ? "" : value }
                   }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona coordinador" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin asignar</SelectItem>
+                      <SelectItem value="none">Sin asignar</SelectItem>
                       {coordinadores.map((person) => (
                         <SelectItem key={person.id} value={person.nombre}>
                           {person.nombre}
@@ -662,15 +669,15 @@ export default function EditEventPage() {
 
                 <div>
                   <Label htmlFor="kitchenSupervisor">Supervisor de Cocina</Label>
-                  <Select value={formData.staff.kitchenSupervisor} onValueChange={(value) => setFormData(prev => ({
+                  <Select value={formData.staff.kitchenSupervisor || "none"} onValueChange={(value) => setFormData(prev => ({
                     ...prev,
-                    staff: { ...prev.staff, kitchenSupervisor: value }
+                    staff: { ...prev.staff, kitchenSupervisor: value === "none" ? "" : value }
                   }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona supervisor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin asignar</SelectItem>
+                      <SelectItem value="none">Sin asignar</SelectItem>
                       {supervisoresCocina.map((person) => (
                         <SelectItem key={person.id} value={person.nombre}>
                           {person.nombre}

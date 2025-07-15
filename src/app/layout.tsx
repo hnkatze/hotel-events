@@ -9,8 +9,72 @@ import { Toaster } from "sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Sistema de Eventos - Hotel Grand Palace",
-  description: "Sistema completo de gestión de eventos para hotel con 5 salones",
+  title: {
+    default: "Sistema de Eventos - Hotel Management",
+    template: "%s | Sistema de Eventos"
+  },
+  description: "Sistema completo de gestión de eventos para hoteles. Administra salones, personal, reservas y eventos de manera eficiente con una interfaz moderna y responsive.",
+  keywords: [
+    "gestión de eventos",
+    "hotel management",
+    "reservas",
+    "salones",
+    "personal",
+    "eventos corporativos",
+    "sistema de reservas",
+    "administración hotelera"
+  ],
+  authors: [{ name: "Hotel Events Team" }],
+  creator: "Hotel Events System",
+  publisher: "Hotel Events",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://hotel-events.vercel.app'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: "Sistema de Eventos - Hotel Management",
+    description: "Sistema completo de gestión de eventos para hoteles. Administra salones, personal, reservas y eventos de manera eficiente.",
+    url: 'https://hotel-events.vercel.app',
+    siteName: 'Sistema de Eventos',
+    locale: 'es_ES',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Sistema de Eventos - Hotel Management',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Sistema de Eventos - Hotel Management",
+    description: "Sistema completo de gestión de eventos para hoteles",
+    images: ['/og-image.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({

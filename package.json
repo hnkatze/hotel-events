@@ -1,12 +1,55 @@
 {
   "name": "hotel-events-system",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Sistema completo de gestión de eventos para hoteles con interfaz moderna y responsive",
+  "main": "index.js",
   "private": true,
+  "keywords": [
+    "hotel-management",
+    "event-management",
+    "nextjs",
+    "typescript",
+    "firebase",
+    "tailwindcss",
+    "react",
+    "responsive-design"
+  ],
+  "author": {
+    "name": "Hotel Events Team",
+    "email": "soporte@hotelevents.com",
+    "url": "https://github.com/hnkatze"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hnkatze/hotel-events.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hnkatze/hotel-events/issues"
+  },
+  "homepage": "https://hotel-events.vercel.app",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next dist",
+    "preview": "next build && next start",
+    "format": "prettier --write . --ignore-path .gitignore",
+    "format:check": "prettier --check . --ignore-path .gitignore",
+    "analyze": "cross-env ANALYZE=true next build",
+    "test": "echo \"Tests will be added in future versions\" && exit 0",
+    "test:watch": "echo \"Test watch mode will be added in future versions\" && exit 0",
+    "audit:security": "npm audit --audit-level=moderate",
+    "postinstall": "npm run type-check",
+    "prepare": "husky install || echo 'Husky not installed'",
+    "pre-commit": "npm run lint:fix && npm run format && npm run type-check"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.14",

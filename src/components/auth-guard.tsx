@@ -30,12 +30,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               <Hotel className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl">Sistema de Eventos</CardTitle>
-            <p className="text-gray-600">Hotel Grand Palace</p>
+            <p className="text-gray-600">My Grand Palace Hotel</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center space-y-2">
               <h3 className="font-semibold">Gestión Profesional de Eventos</h3>
-              <p className="text-sm text-gray-600">Administra los 5 salones de tu hotel de manera eficiente</p>
+              <p className="text-sm text-gray-600">Administra los salones de tu hotel de manera eficiente</p>
             </div>
 
             <div className="grid grid-cols-3 gap-4 text-center">
